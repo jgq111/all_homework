@@ -1,0 +1,311 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="admin-container">
+    <h1>管理员后台</h1>
+
+    <div class="section">
+        <h2>教室管理</h2>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>教室名称</th>
+                    <th>容量</th>
+                    <th>座位数量</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for classroom in classrooms %}
+                <tr>
+                    <td>{{ classroom.name }}</td>
+                    <td>{{ classroom.capacity }}</td>
+                    <td>{{ classroom.seats|length }}</td>
+                    <td>
+                        <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#editClassroomModal{{ classroom.id }}">
+                            修改
+                        </button>
+                        <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteClassroomModal{{ classroom.id }}">
+                            删除
+                        </button>
+                    </td>
+                </tr>
+
+                <!-- 修改教室模态框 -->
+                <div class="modal fade" id="editClassroomModal{{ classroom.id }}" tabindex="-1">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">修改教室信息</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <form action="{{ url_for('edit_classroom', classroom_id=classroom.id) }}" method="POST">
+                                <div class="modal-body">
+                                    <div class="mb-3">
+                                        <label for="name{{ classroom.id }}" class="form-label">教室名称</label>
+                                        <input type="text" class="form-control" id="name{{ classroom.id }}" 
+                                               name="name" value="{{ classroom.name }}" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="capacity{{ classroom.id }}" class="form-label">座位容量</label>
+                                        <input type="number" class="form-control" id="capacity{{ classroom.id }}" 
+                                               name="capacity" value="{{ classroom.capacity }}" min="1" required>
+                                        <small class="form-text text-muted">注意：减少座位数可能会删除已有的座位</small>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                                    <button type="submit" class="btn btn-primary">保存修改</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 删除教室确认模态框 -->
+                <div class="modal fade" id="deleteClassroomModal{{ classroom.id }}" tabindex="-1">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">确认删除</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <p>确定要删除教室 "{{ classroom.name }}" 吗？此操作将同时删除该教室的所有座位和预约记录。</p>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                                <a href="{{ url_for('delete_classroom', classroom_id=classroom.id) }}" 
+                                   class="btn btn-danger">确认删除</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </tbody>
+        </table>
+        <a href="{{ url_for('add_classroom') }}" class="btn btn-success">添加新教室</a>
+    </div>
+
+    <div class="section">
+        <h2>用户管理</h2>
+        <div class="mb-3">
+            <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addUserModal">
+                添加用户
+            </button>
+        </div>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>用户名</th>
+                    <th>身份</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                <tr>
+                    <td>{{ user.username }}</td>
+                    <td>{% if user.is_admin %}管理员{% else %}普通用户{% endif %}</td>
+                    <td>
+                        {% if not user.is_admin or current_user.username == 'admin' %}
+                            <button type="button" class="btn btn-primary btn-sm" 
+                                    data-bs-toggle="modal" 
+                                    data-bs-target="#editUserModal{{ user.id }}">
+                                修改
+                            </button>
+                            {% if user.username != 'admin' %}
+                                <a href="{{ url_for('delete_user', user_id=user.id) }}" 
+                                   onclick="return confirm('确定要删除该用户吗？')"
+                                   class="btn btn-danger btn-sm">删除</a>
+                            {% endif %}
+                        {% endif %}
+                    </td>
+                </tr>
+
+                <!-- 修改用户模态框 -->
+                <div class="modal fade" id="editUserModal{{ user.id }}" tabindex="-1">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">修改用户信息</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <form action="{{ url_for('edit_user', user_id=user.id) }}" method="POST">
+                                <div class="modal-body">
+                                    <div class="mb-3">
+                                        <label for="username{{ user.id }}" class="form-label">用户名</label>
+                                        <input type="text" class="form-control" id="username{{ user.id }}" 
+                                               name="username" value="{{ user.username }}" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="password{{ user.id }}" class="form-label">新密码</label>
+                                        <input type="password" class="form-control" id="password{{ user.id }}" 
+                                               name="password" placeholder="留空表示不修改">
+                                    </div>
+                                    {% if current_user.username == 'admin' %}
+                                    <div class="mb-3">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="is_admin{{ user.id }}" 
+                                                   name="is_admin" {% if user.is_admin %}checked{% endif %}>
+                                            <label class="form-check-label" for="is_admin{{ user.id }}">
+                                                管理员权限
+                                            </label>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                                    <button type="submit" class="btn btn-primary">保存修改</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- 添加用户模态框 -->
+    <div class="modal fade" id="addUserModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">添加新用户</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form action="{{ url_for('add_user') }}" method="POST">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="new_username" class="form-label">用户名</label>
+                            <input type="text" class="form-control" id="new_username" name="username" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="new_password" class="form-label">密码</label>
+                            <input type="password" class="form-control" id="new_password" name="password" required>
+                        </div>
+                        {% if current_user.username == 'admin' %}
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="new_is_admin" name="is_admin">
+                                <label class="form-check-label" for="new_is_admin">
+                                    管理员权限
+                                </label>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                        <button type="submit" class="btn btn-primary">添加用户</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>预约管理</h2>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>用户</th>
+                    <th>教室</th>
+                    <th>座位号</th>
+                    <th>日期</th>
+                    <th>开始时间</th>
+                    <th>结束时间</th>
+                    <th>状态</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for reservation in reservations %}
+                <tr>
+                    <td>{{ reservation.user.username }}</td>
+                    <td>{{ reservation.seat.classroom.name }}</td>
+                    <td>{{ reservation.seat.seat_number }}</td>
+                    <td>{{ reservation.date }}</td>
+                    <td>{{ reservation.start_time }}</td>
+                    <td>{{ reservation.end_time }}</td>
+                    <td>
+                        {% set now = datetime.now() %}
+                        {% set reservation_datetime = (reservation.date|string + ' ' + reservation.start_time)|datetime %}
+                        {% set end_datetime = (reservation.date|string + ' ' + reservation.end_time)|datetime %}
+                        {% set deadline = reservation_datetime + timedelta(minutes=20) %}
+                        
+                        {% if now >= end_datetime %}
+                            <span class="badge bg-secondary">已结束</span>
+                        {% elif reservation.checked_in %}
+                            <span class="badge bg-success">已签到</span>
+                        {% else %}
+                            {% if now < reservation_datetime %}
+                                <span class="badge bg-warning">未签到</span>
+                            {% elif now > deadline %}
+                                <span class="badge bg-danger">预约失效</span>
+                            {% else %}
+                                <span class="badge bg-primary">可以签到</span>
+                            {% endif %}
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if not reservation.checked_in %}
+                            {% if now < deadline %}
+                                <a href="{{ url_for('cancel_reservation', reservation_id=reservation.id) }}" 
+                                   onclick="return confirm('确定要取消这个预约吗？')"
+                                   class="btn btn-danger btn-sm">取消预约</a>
+                            {% else %}
+                                <span class="badge bg-danger">预约失效</span>
+                            {% endif %}
+                        {% else %}
+                            {% if now < end_datetime %}
+                                <a href="{{ url_for('end_reservation', reservation_id=reservation.id) }}" 
+                                   onclick="return confirm('确定要提前结束这个预约吗？')"
+                                   class="btn btn-warning btn-sm">提前结束</a>
+                            {% endif %}
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<style>
+    .admin-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+    .section {
+        margin-bottom: 30px;
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 20px 0;
+    }
+    .table th, .table td {
+        padding: 12px;
+        text-align: left;
+        border-bottom: 1px solid #ddd;
+    }
+    .btn {
+        margin-right: 5px;
+    }
+    .badge {
+        padding: 5px 10px;
+        border-radius: 4px;
+        font-size: 0.9em;
+    }
+</style>
+{% endblock %}
+
+

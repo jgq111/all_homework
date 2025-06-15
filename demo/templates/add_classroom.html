@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>添加新教室</h1>
+    <form method="POST" class="mt-4">
+        <div class="mb-3">
+            <label for="name" class="form-label">教室名称</label>
+            <input type="text" class="form-control" id="name" name="name" required>
+        </div>
+        <div class="mb-3">
+            <label for="rows" class="form-label">行数</label>
+            <input type="number" class="form-control" id="rows" name="rows" min="1" required>
+            <small class="form-text text-muted">教室座位的行数</small>
+        </div>
+        <div class="mb-3">
+            <label for="cols" class="form-label">列数</label>
+            <input type="number" class="form-control" id="cols" name="cols" min="1" required>
+            <small class="form-text text-muted">每行的座位数</small>
+        </div>
+        <div class="mb-3">
+            <label for="prefix" class="form-label">座位编号前缀</label>
+            <input type="text" class="form-control" id="prefix" name="prefix" required>
+            <small class="form-text text-muted">例如：A、B、C等</small>
+        </div>
+        <div class="mb-3">
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="preview" name="preview">
+                <label class="form-check-label" for="preview">
+                    预览布局
+                </label>
+            </div>
+        </div>
+        <div id="layoutPreview" class="mb-3" style="display: none;">
+            <h3>座位布局预览</h3>
+            <div id="previewGrid" class="border p-3">
+            </div>
+        </div>
+        <button type="submit" class="btn btn-primary">添加教室</button>
+    </form>
+</div>
+
+<style>
+.seat-preview {
+    width: 60px;
+    height: 60px;
+    margin: 5px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background-color: #f8f9fa;
+}
+.preview-row {
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: center;
+}
+</style>
+
+<script>
+document.getElementById('preview').addEventListener('change', function() {
+    const previewSection = document.getElementById('layoutPreview');
+    const previewGrid = document.getElementById('previewGrid');
+    const rows = parseInt(document.getElementById('rows').value) || 0;
+    const cols = parseInt(document.getElementById('cols').value) || 0;
+    const prefix = document.getElementById('prefix').value || '';
+
+    if (this.checked) {
+        previewSection.style.display = 'block';
+        updatePreview();
+    } else {
+        previewSection.style.display = 'none';
+    }
+});
+
+['rows', 'cols', 'prefix'].forEach(id => {
+    document.getElementById(id).addEventListener('input', function() {
+        if (document.getElementById('preview').checked) {
+            updatePreview();
+        }
+    });
+});
+
+function updatePreview() {
+    const previewGrid = document.getElementById('previewGrid');
+    const rows = parseInt(document.getElementById('rows').value) || 0;
+    const cols = parseInt(document.getElementById('cols').value) || 0;
+    const prefix = document.getElementById('prefix').value || '';
+
+    previewGrid.innerHTML = '';
+
+    for (let i = 0; i < rows; i++) {
+        const rowDiv = document.createElement('div');
+        rowDiv.className = 'preview-row';
+        
+        for (let j = 0; j < cols; j++) {
+            const seatDiv = document.createElement('div');
+            seatDiv.className = 'seat-preview';
+            const seatNumber = prefix + ((i * cols) + j + 1);
+            seatDiv.textContent = seatNumber;
+            rowDiv.appendChild(seatDiv);
+        }
+        
+        previewGrid.appendChild(rowDiv);
+    }
+}
+</script>
+{% endblock %}

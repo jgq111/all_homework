@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <!-- Hero Section -->
+        <div class="text-center mb-5">
+            <h1 class="display-5 fw-bold mb-3">
+                <span class="text-primary"><i class="bi bi-building me-2"></i>教室预约系统</span>
+            </h1>
+            <p class="lead text-muted mb-4">便捷高效的线上预约平台，助您轻松管理学习时间</p>
+            <div class="d-flex justify-content-center gap-3">
+                {% if current_user.is_authenticated %}
+                    <a href="{{ url_for('my_reservations') }}" class="btn btn-primary">
+                        <i class="bi bi-calendar-check me-2"></i>我的预约
+                    </a>
+                {% else %}
+                    <a href="{{ url_for('login') }}" class="btn btn-primary">
+                        <i class="bi bi-box-arrow-in-right me-2"></i>立即登录
+                    </a>
+                    <a href="{{ url_for('register') }}" class="btn btn-outline-primary">
+                        <i class="bi bi-person-plus me-2"></i>注册账号
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+        
+        {% if current_user.is_authenticated %}
+            {% if current_user.is_admin %}
+                <div class="alert alert-warning d-flex align-items-center rounded shadow-sm mb-4" role="alert">
+                    <i class="bi bi-shield-lock-fill me-3 fs-4"></i>
+                    <div>
+                        <strong>管理员提示：</strong> 您已以管理员身份登录，可以访问<a href="{{ url_for('admin_dashboard') }}" class="alert-link ms-1">管理后台</a>进行系统设置。
+                    </div>
+                </div>
+            {% endif %}
+
+            <!-- Available Classrooms -->
+            <h2 class="fs-4 mb-4 d-flex align-items-center">
+                <i class="bi bi-grid-3x3-gap-fill me-2 text-primary"></i>
+                <span>可用教室</span>
+                <span class="badge bg-primary rounded-pill ms-2">{{ classrooms|length }}</span>
+            </h2>
+            
+            {% if classrooms %}
+                <div class="row g-4 mb-5">
+                    {% for classroom in classrooms %}
+                        <div class="col-md-6 col-lg-4">
+                            <div class="card h-100 border-0 classroom-card">
+                                <div class="card-body p-4">
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <h3 class="card-title h5 text-primary mb-0">{{ classroom.name }}</h3>
+                                        <span class="badge bg-light text-dark">
+                                            <i class="bi bi-people me-1"></i>{{ classroom.capacity }}座
+                                        </span>
+                                    </div>
+                                    
+                                    <div class="d-flex justify-content-between align-items-center mt-3">
+                                        <a href="{{ url_for('classroom_detail', classroom_id=classroom.id) }}" class="btn btn-sm btn-outline-primary mt-2">
+                                            <i class="bi bi-eye me-1"></i>查看详情
+                                        </a>
+                                        <small class="text-muted">
+                                            <i class="bi bi-chair me-1"></i>{{ classroom.seats|length }}个座位
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle me-2"></i>当前没有可用教室
+                </div>
+            {% endif %}
+            
+        {% else %}
+            <!-- Login Required Message -->
+            <div class="text-center py-5">
+                <img src="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/icons/book.svg" width="80" height="80" class="mb-4 opacity-50">
+                <h2 class="h4 mb-3">请先登录后使用预约功能</h2>
+                <p class="text-muted mb-4">登录后可以查看教室详情并预约座位</p>
+                <div class="d-flex justify-content-center gap-3">
+                    <a href="{{ url_for('login') }}" class="btn btn-primary">
+                        <i class="bi bi-box-arrow-in-right me-2"></i>立即登录
+                    </a>
+                    <a href="{{ url_for('register') }}" class="btn btn-outline-primary">
+                        <i class="bi bi-person-plus me-2"></i>注册账号
+                    </a>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+.classroom-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.classroom-card:hover {
+    transform: translateY(-5px);
+}
+
+.badge {
+    font-weight: 500;
+}
+</style>
+{% endblock %}

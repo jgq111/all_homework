@@ -1,0 +1,433 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-11">
+        <!-- Classroom Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom">
+            <div>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb mb-2">
+                        <li class="breadcrumb-item"><a href="{{ url_for('index') }}" class="text-decoration-none">主页</a></li>
+                        <li class="breadcrumb-item active">{{ classroom.name }}</li>
+                    </ol>
+                </nav>
+                <h1 class="h3 mb-1 d-flex align-items-center">
+                    <i class="bi bi-building me-2 text-primary"></i>{{ classroom.name }}
+                </h1>
+                <p class="text-muted">
+                    <i class="bi bi-people me-1"></i>容量: {{ classroom.capacity }} 座位
+                    <span class="mx-2">•</span>
+                    <i class="bi bi-chair me-1"></i>{{ classroom.seats|length }} 个座位可预约
+                </p>
+            </div>
+            <div class="d-none d-md-block">
+                <a href="{{ url_for('index') }}" class="btn btn-outline-primary">
+                    <i class="bi bi-arrow-left me-2"></i>返回教室列表
+                </a>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <!-- Main Content: Seat Layout -->
+            <div class="col-lg-8">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0 d-flex align-items-center">
+                            <i class="bi bi-grid-3x3 text-primary me-2"></i>座位布局
+                        </h5>
+                        <div id="date-selector" class="d-flex align-items-center">
+                            <span class="me-2 text-muted small">选择日期:</span>
+                            <input type="date" id="selectedDate" class="form-control form-control-sm" value="{{ today }}">
+                        </div>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="seat-map mb-4">
+                            <div class="row g-3">
+                                {% for seat in classroom.seats %}
+                                <div class="col-6 col-sm-4 col-md-3">
+                                    <div class="seat-item" data-seat-id="{{ seat.id }}">
+                                        <div class="card h-100 seat-card border-0 shadow-sm">
+                                            <div class="card-body p-3 text-center position-relative">
+                                                <span class="seat-number">{{ seat.seat_number }}</span>
+                                                <h6 class="card-title mb-3">座位 {{ seat.seat_number }}</h6>
+                                                <button type="button" class="btn btn-primary btn-sm w-100 reserve-btn" 
+                                                    data-bs-toggle="modal" data-bs-target="#reserveModal{{ seat.id }}">
+                                                    <i class="bi bi-calendar-plus me-1"></i>预约
+                                                </button>
+                                                <div class="seat-status"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        
+                        <div class="seat-legend d-flex justify-content-center mt-4">
+                            <div class="d-flex align-items-center me-4">
+                                <div class="seat-legend-item available"></div>
+                                <span class="ms-2">可用</span>
+                            </div>
+                            <div class="d-flex align-items-center me-4">
+                                <div class="seat-legend-item reserved"></div>
+                                <span class="ms-2">已预约</span>
+                            </div>
+                            <div class="d-flex align-items-center">
+                                <div class="seat-legend-item your-reservation"></div>
+                                <span class="ms-2">您的预约</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Sidebar: User's Reservations -->
+            <div class="col-lg-4">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white py-3">
+                        <h5 class="mb-0 d-flex align-items-center">
+                            <i class="bi bi-bookmark text-primary me-2"></i>我的预约
+                        </h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="list-group list-group-flush">
+                        {% for reservation in current_user.reservations %}
+                            {% if reservation.seat.classroom_id == classroom.id %}
+                            <div class="list-group-item border-0 py-3">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="bi bi-geo-alt-fill text-primary me-2"></i>
+                                    <strong>座位: {{ reservation.seat.seat_number }}</strong>
+                                </div>
+                                <div class="d-flex align-items-center mb-2 small text-muted">
+                                    <i class="bi bi-calendar me-2"></i>
+                                    {{ reservation.date }}
+                                </div>
+                                <div class="d-flex align-items-center mb-3 small text-muted">
+                                    <i class="bi bi-clock me-2"></i>
+                                    {{ reservation.start_time }} - {{ reservation.end_time }}
+                                </div>
+                                <div class="d-flex gap-2">
+                                    {% if not reservation.checked_in %}
+                                    <a href="{{ url_for('check_in', reservation_id=reservation.id) }}" class="btn btn-sm btn-outline-success">
+                                        <i class="bi bi-check-circle me-1"></i>签到
+                                    </a>
+                                    {% endif %}
+                                    <a href="{{ url_for('cancel_reservation', reservation_id=reservation.id) }}" class="btn btn-sm btn-outline-danger">
+                                        <i class="bi bi-trash me-1"></i>取消
+                                    </a>
+                                </div>
+                            </div>
+                            {% endif %}
+                        {% else %}
+                            <div class="list-group-item border-0 py-4 text-center">
+                                <i class="bi bi-calendar-x text-muted mb-3 fs-3"></i>
+                                <p class="text-muted mb-0">暂无预约记录</p>
+                            </div>
+                        {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Reservation Modals -->
+{% for seat in classroom.seats %}
+<div class="modal fade" id="reserveModal{{ seat.id }}" tabindex="-1" aria-labelledby="reserveModalLabel{{ seat.id }}">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header">
+                <h5 class="modal-title d-flex align-items-center" id="reserveModalLabel{{ seat.id }}">
+                    <i class="bi bi-calendar-plus text-primary me-2"></i>预约座位 {{ seat.seat_number }}
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="reserveForm{{ seat.id }}" data-seat-id="{{ seat.id }}" class="needs-validation" novalidate>
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label for="date{{ seat.id }}" class="form-label">
+                            <i class="bi bi-calendar me-1"></i>日期
+                        </label>
+                        <input type="date" class="form-control" id="date{{ seat.id }}" name="date" required>
+                        <div class="form-text">仅限预约未来7天内的座位</div>
+                        <div class="invalid-feedback">请选择预约日期</div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col">
+                            <div class="mb-3">
+                                <label for="start_time{{ seat.id }}" class="form-label">
+                                    <i class="bi bi-clock me-1"></i>开始时间
+                                </label>
+                                <input type="time" class="form-control" id="start_time{{ seat.id }}" name="start_time" required>
+                                <div class="invalid-feedback">请选择开始时间</div>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="mb-3">
+                                <label for="end_time{{ seat.id }}" class="form-label">
+                                    <i class="bi bi-clock-fill me-1"></i>结束时间
+                                </label>
+                                <input type="time" class="form-control" id="end_time{{ seat.id }}" name="end_time" required>
+                                <div class="invalid-feedback">请选择结束时间</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info d-flex align-items-center mt-3 mb-0">
+                        <i class="bi bi-info-circle-fill me-2"></i>
+                        <div>预约时长不得超过2小时，预约后请在开始时间后20分钟内签到</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-calendar-check me-1"></i>确认预约
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+<!-- Result Modal -->
+<div class="modal fade" id="resultModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header">
+                <h5 class="modal-title d-flex align-items-center">
+                    <i class="bi bi-info-circle text-primary me-2"></i>预约结果
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4 text-center">
+                <div id="resultIcon" class="mb-3 fs-1"></div>
+                <p id="resultMessage" class="mb-0 fs-5"></p>
+            </div>
+            <div class="modal-footer justify-content-center">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+                <a href="{{ url_for('my_reservations') }}" id="viewReservationsBtn" style="display: none;" 
+                   class="btn btn-primary">查看我的预约</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.seat-card {
+    transition: all 0.3s ease;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.seat-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1) !important;
+}
+
+.seat-number {
+    position: absolute;
+    top: 5px;
+    right: 8px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #6c757d;
+}
+
+.seat-status {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: #28a745;
+}
+
+.seat-legend {
+    border-top: 1px solid #eee;
+    padding-top: 1rem;
+}
+
+.seat-legend-item {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+}
+
+.seat-legend-item.available {
+    background-color: #28a745;
+}
+
+.seat-legend-item.reserved {
+    background-color: #dc3545;
+}
+
+.seat-legend-item.your-reservation {
+    background-color: #007bff;
+}
+
+#date-selector input {
+    max-width: 150px;
+}
+
+.breadcrumb-item a {
+    color: var(--primary-color);
+}
+
+.card-header {
+    border-bottom: 1px solid #f0f0f0;
+}
+</style>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 设置日期输入的最小值为今天，最大值为7天后
+    const today = new Date();
+    const maxDate = new Date();
+    maxDate.setDate(today.getDate() + 7);
+    
+    // 格式化当前日期
+    const formattedToday = today.toISOString().split('T')[0];
+    const formattedMaxDate = maxDate.toISOString().split('T')[0];
+    
+    // 格式化当前时间
+    const currentHour = today.getHours().toString().padStart(2, '0');
+    const currentMinute = today.getMinutes().toString().padStart(2, '0');
+    const currentTime = `${currentHour}:${currentMinute}`;
+    
+    // 计算默认结束时间（当前时间加2小时）
+    const endTime = new Date(today);
+    endTime.setHours(endTime.getHours() + 2);
+    const endHour = endTime.getHours().toString().padStart(2, '0');
+    const endMinute = endTime.getMinutes().toString().padStart(2, '0');
+    const defaultEndTime = `${endHour}:${endMinute}`;
+    
+    // 设置日期选择器默认值
+    document.querySelector('#selectedDate').value = formattedToday;
+    document.querySelector('#selectedDate').min = formattedToday;
+    document.querySelector('#selectedDate').max = formattedMaxDate;
+    
+    // 设置所有表单的默认值
+    document.querySelectorAll('form[id^="reserveForm"]').forEach(form => {
+        const dateInput = form.querySelector('input[type="date"]');
+        const startTimeInput = form.querySelector('input[type="time"][name="start_time"]');
+        const endTimeInput = form.querySelector('input[type="time"][name="end_time"]');
+        
+        // 设置日期范围和默认值
+        dateInput.min = formattedToday;
+        dateInput.max = formattedMaxDate;
+        dateInput.value = formattedToday;
+        
+        // 设置时间默认值
+        startTimeInput.value = currentTime;
+        endTimeInput.value = defaultEndTime;
+    });
+
+    // 表单验证
+    const forms = document.querySelectorAll('.needs-validation');
+    Array.from(forms).forEach(form => {
+        form.addEventListener('submit', function(event) {
+            event.preventDefault();
+            if (!form.checkValidity()) {
+                event.stopPropagation();
+                form.classList.add('was-validated');
+                return;
+            }
+            
+            const seatId = this.getAttribute('data-seat-id');
+            submitReservation(event, seatId);
+        });
+    });
+    
+    // 日期选择器变化时更新座位状态
+    document.querySelector('#selectedDate').addEventListener('change', function() {
+        // TODO: 添加AJAX请求获取所选日期的座位状态并更新界面
+    });
+});
+
+function submitReservation(event, seatId) {
+    event.preventDefault();
+    const form = document.getElementById('reserveForm' + seatId);
+    const formData = new FormData(form);
+    
+    // 验证时间
+    const date = formData.get('date');
+    const startTime = formData.get('start_time');
+    const endTime = formData.get('end_time');
+    
+    // 检查是否选择了未来7天内的日期
+    const selectedDate = new Date(date);
+    const today = new Date();
+    const maxDate = new Date();
+    maxDate.setDate(today.getDate() + 7);
+    
+    if (selectedDate > maxDate) {
+        showResult('只能预约未来7天内的座位', false);
+        return;
+    }
+    
+    // 检查预约时长
+    const startDateTime = new Date(date + 'T' + startTime);
+    const endDateTime = new Date(date + 'T' + endTime);
+    const duration = (endDateTime - startDateTime) / (1000 * 60 * 60); // 小时
+    
+    if (duration > 2) {
+        showResult('预约时长不能超过2小时', false);
+        return;
+    }
+    
+    if (endDateTime <= startDateTime) {
+        showResult('结束时间必须晚于开始时间', false);
+        return;
+    }
+    
+    // 发送预约请求
+    fetch('/reserve/' + seatId, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        showResult(data.message, data.success);
+        if (data.success) {
+            document.querySelector('#reserveModal' + seatId).querySelector('.btn-close').click();
+            form.reset();
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showResult('系统错误，请稍后重试', false);
+    });
+}
+
+function showResult(message, success = false) {
+    const resultMessage = document.getElementById('resultMessage');
+    const resultIcon = document.getElementById('resultIcon');
+    const viewReservationsBtn = document.getElementById('viewReservationsBtn');
+    
+    resultMessage.textContent = message;
+    resultIcon.innerHTML = success ? 
+        '<i class="bi bi-check-circle-fill text-success"></i>' : 
+        '<i class="bi bi-exclamation-circle-fill text-danger"></i>';
+    
+    viewReservationsBtn.style.display = success ? 'inline-block' : 'none';
+    
+    const resultModal = new bootstrap.Modal(document.getElementById('resultModal'));
+    resultModal.show();
+    
+    if (success) {
+        // 1.5秒后刷新页面
+        setTimeout(() => {
+            window.location.reload();
+        }, 1500);
+    }
+}
+</script>
+{% endblock %}

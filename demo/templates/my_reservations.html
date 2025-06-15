@@ -1,0 +1,251 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <!-- Page Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom">
+            <div>
+                <h1 class="h3 mb-1 d-flex align-items-center">
+                    <i class="bi bi-calendar-check text-primary me-2"></i>我的预约
+                </h1>
+                <p class="text-muted mb-0">管理您的座位预约记录</p>
+            </div>
+            <div class="d-none d-md-block">
+                <a href="{{ url_for('index') }}" class="btn btn-outline-primary">
+                    <i class="bi bi-arrow-left me-2"></i>返回主页
+                </a>
+            </div>
+        </div>
+
+        <!-- Reservations Content -->
+        {% if reservations %}
+            <!-- Reservation Stats -->
+            <div class="row mb-4">
+                <div class="col-md-4 mb-3">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-body p-3 d-flex align-items-center">
+                            <div class="icon-box bg-primary-light rounded-circle me-3 p-2">
+                                <i class="bi bi-calendar2-check text-primary fs-3"></i>
+                            </div>
+                            <div>
+                                <h6 class="mb-1">当前预约</h6>
+                                <h3 class="mb-0">{{ reservations|length }}</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-4 mb-3">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-body p-3 d-flex align-items-center">
+                            <div class="icon-box bg-success-light rounded-circle me-3 p-2">
+                                <i class="bi bi-check2-circle text-success fs-3"></i>
+                            </div>
+                            <div>
+                                <h6 class="mb-1">已签到</h6>
+                                <h3 class="mb-0">{{ reservations|selectattr('checked_in', 'eq', true)|list|length }}</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-4 mb-3">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-body p-3 d-flex align-items-center">
+                            <div class="icon-box bg-warning-light rounded-circle me-3 p-2">
+                                <i class="bi bi-exclamation-circle text-warning fs-3"></i>
+                            </div>
+                            <div>
+                                <h6 class="mb-1">待签到</h6>
+                                <h3 class="mb-0">{{ reservations|selectattr('checked_in', 'ne', true)|list|length }}</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Reservations List -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0 d-flex align-items-center">
+                        <i class="bi bi-list-check text-primary me-2"></i>预约列表
+                    </h5>
+                </div>
+                <div class="card-body px-0 pt-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th class="ps-4">教室/座位</th>
+                                    <th>日期与时间</th>
+                                    <th>状态</th>
+                                    <th class="text-end pe-4">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for reservation in reservations %}
+                                {% set now = datetime.now() %}
+                                {% set reservation_datetime = (reservation.date|string + ' ' + reservation.start_time)|datetime %}
+                                {% set end_datetime = (reservation.date|string + ' ' + reservation.end_time)|datetime %}
+                                {% set deadline = reservation_datetime + timedelta(minutes=20) %}
+                                <tr>
+                                    <td class="ps-4">
+                                        <div class="d-flex align-items-center">
+                                            <div class="icon-box bg-light rounded-circle me-3 p-2">
+                                                <i class="bi bi-building text-primary"></i>
+                                            </div>
+                                            <div>
+                                                <h6 class="mb-0">{{ reservation.seat.classroom.name }}</h6>
+                                                <small class="text-muted">座位 {{ reservation.seat.seat_number }}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div>
+                                            <div class="d-flex align-items-center">
+                                                <i class="bi bi-calendar-date text-primary me-2"></i>
+                                                <span>{{ reservation.date }}</span>
+                                            </div>
+                                            <div class="d-flex align-items-center mt-1 text-muted small">
+                                                <i class="bi bi-clock text-secondary me-2"></i>
+                                                <span>{{ reservation.start_time }} - {{ reservation.end_time }}</span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {% if now >= end_datetime %}
+                                            <span class="badge rounded-pill text-bg-secondary">
+                                                <i class="bi bi-check-circle-fill me-1"></i>已结束
+                                            </span>
+                                        {% elif reservation.checked_in %}
+                                            <span class="badge rounded-pill text-bg-success">
+                                                <i class="bi bi-check-circle-fill me-1"></i>已签到
+                                            </span>
+                                        {% else %}
+                                            {% if now < reservation_datetime %}
+                                                <span class="badge rounded-pill text-bg-warning">
+                                                    <i class="bi bi-exclamation-circle-fill me-1"></i>未签到
+                                                </span>
+                                            {% elif now > deadline %}
+                                                <span class="badge rounded-pill text-bg-danger">
+                                                    <i class="bi bi-x-circle-fill me-1"></i>预约失效
+                                                </span>
+                                            {% else %}
+                                                <span class="badge rounded-pill text-bg-primary">
+                                                    <i class="bi bi-arrow-right-circle-fill me-1"></i>可以签到
+                                                </span>
+                                            {% endif %}
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-end pe-4">
+                                        <div class="d-flex justify-content-end">
+                                            {% if not reservation.checked_in %}
+                                                {% if now >= reservation_datetime and now <= deadline %}
+                                                    <a href="{{ url_for('check_in', reservation_id=reservation.id) }}" 
+                                                    class="btn btn-sm btn-outline-success me-2">
+                                                        <i class="bi bi-check-circle me-1"></i>签到
+                                                    </a>
+                                                {% endif %}
+                                                {% if now < deadline %}
+                                                    <a href="{{ url_for('cancel_reservation', reservation_id=reservation.id) }}" 
+                                                    onclick="return confirm('确定要取消这个预约吗？')"
+                                                    class="btn btn-sm btn-outline-danger">
+                                                        <i class="bi bi-trash me-1"></i>取消
+                                                    </a>
+                                                {% endif %}
+                                            {% else %}
+                                                {% if now < end_datetime %}
+                                                    <a href="{{ url_for('end_reservation', reservation_id=reservation.id) }}" 
+                                                    onclick="return confirm('确定要提前结束预约吗？')"
+                                                    class="btn btn-sm btn-outline-warning">
+                                                        <i class="bi bi-box-arrow-right me-1"></i>结束预约
+                                                    </a>
+                                                {% endif %}
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        {% else %}
+            <!-- Empty State -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-body py-5 text-center">
+                    <div class="empty-state mb-4">
+                        <i class="bi bi-calendar-x text-muted opacity-50" style="font-size: 5rem;"></i>
+                    </div>
+                    <h3 class="h4 mb-3">暂无预约记录</h3>
+                    <p class="text-muted mb-4">您还没有任何座位预约，点击下方按钮浏览可用教室并预约座位。</p>
+                    <a href="{{ url_for('index') }}" class="btn btn-primary">
+                        <i class="bi bi-building me-2"></i>浏览教室
+                    </a>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+.table {
+    font-size: 0.95rem;
+}
+
+.table th {
+    font-weight: 600;
+    color: #6c757d;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+}
+
+.badge {
+    padding: 0.5em 0.8em;
+    font-weight: 500;
+}
+
+.bg-primary-light {
+    background-color: rgba(63, 81, 181, 0.12);
+}
+
+.bg-success-light {
+    background-color: rgba(40, 167, 69, 0.12);
+}
+
+.bg-warning-light {
+    background-color: rgba(255, 193, 7, 0.12);
+}
+
+.icon-box {
+    height: 45px;
+    width: 45px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.empty-state {
+    animation: bounce 2s ease infinite;
+}
+
+@keyframes bounce {
+    0%, 20%, 50%, 80%, 100% {transform: translateY(0);} 
+    40% {transform: translateY(-20px);} 
+    60% {transform: translateY(-10px);} 
+}
+
+.table-hover tbody tr {
+    transition: all 0.2s ease;
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(63, 81, 181, 0.05);
+}
+</style>
+{% endblock %}
+
+
